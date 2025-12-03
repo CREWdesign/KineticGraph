@@ -19,61 +19,70 @@
     padding: 20px;
     box-sizing: border-box;
     text-align: center;
+    overflow: hidden;
   }
 
-  /* --- LIVE DISPLAY SECTION (TOP) --- */
+  /* --- LIVE DISPLAY --- */
   .display-area {
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     width: 100%;
+    position: relative;
   }
 
   .live-indicator {
     color: #ff3333;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 12px;
     letter-spacing: 2px;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    text-transform: uppercase;
   }
   
-  .dot {
-    width: 10px; height: 10px;
+  .dot-ind {
+    width: 8px; height: 8px;
     background-color: #ff3333;
     border-radius: 50%;
     box-shadow: 0 0 10px #ff3333;
     animation: blink 2s infinite;
   }
-
   @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.3;} 100% {opacity: 1;} }
 
   #current-tick {
-    font-size: 18vw; /* ענק ורספונסיבי */
+    font-size: 16vw;
     font-weight: 800;
     margin: 0;
     line-height: 1;
-    background: -webkit-linear-gradient(#fff, #888);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255,255,255,0.15);
     text-transform: uppercase;
+    z-index: 2;
   }
 
-  .label { font-size: 14px; color: #555; letter-spacing: 3px; margin-top: 10px; text-transform: uppercase; }
+  /* --- GRAPH CANVAS --- */
+  #kinetic-canvas {
+    width: 100%;
+    height: 250px; /* קצת יותר גבוה שיהיה מרשים */
+    margin-top: 10px;
+    background: transparent;
+  }
 
-  /* --- CONTROL SECTION (BOTTOM) --- */
+  /* --- CONTROLS --- */
   .control-area {
     width: 100%;
     max-width: 350px;
-    background: #151515;
+    background: #111;
     padding: 20px;
     border-radius: 20px;
     border: 1px solid #333;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    z-index: 2;
   }
 
   input {
@@ -95,8 +104,8 @@
 
   button {
     width: 100%;
-    background: #00C8FF;
-    color: #000;
+    background: linear-gradient(90deg, #00C8FF, #007bff);
+    color: #fff;
     border: none;
     padding: 15px;
     font-size: 16px;
@@ -105,73 +114,136 @@
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 1px;
-    transition: opacity 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 200, 255, 0.3);
   }
-  
-  button:active { opacity: 0.7; }
-  button:disabled { background: #333; color: #777; }
+  button:active { transform: scale(0.98); }
+  button:disabled { background: #333; color: #777; box-shadow: none; }
 
 </style>
 </head>
 <body>
 
   <div class="display-area">
-    <div class="live-indicator"><div class="dot"></div>LIVE ON SCULPTURE</div>
-    <div id="current-tick">...</div>
-    <div class="label">Current Visualization</div>
+    <div class="live-indicator"><div class="dot-ind"></div>LIVE SCULPTURE VIEW</div>
+    <div id="current-tick">LOADING</div>
+    <canvas id="kinetic-canvas"></canvas>
   </div>
 
   <div class="control-area">
-    <div class="label" style="margin-bottom: 15px; margin-top:0;">Change Data Source</div>
     <input type="text" id="new-tick" placeholder="TYPE SYMBOL" maxlength="6" autocomplete="off">
-    <button id="btn" onclick="send()">Update Display</button>
+    <button id="btn" onclick="send()">Update Graph</button>
   </div>
 
 <script>
-  // הכתובת של המסד נתונים שלך
-  const DB_URL = "https://kineticgraph-default-rtdb.firebaseio.com/current.json"; 
+  // --- הגדרות ---
+  // שים כאן את ה-ID שלך מהפיירבייס
+  const PROJECT_ID = "kineticgraph-default-rtdb"; 
+  const DB_BASE = `https://${PROJECT_ID}.firebaseio.com`;
+  
+  const canvas = document.getElementById('kinetic-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // מיקומים התחלתיים (קו ישר באמצע)
+  let positions = [0.5, 0.5, 0.5, 0.5, 0.5];
+  let targetPositions = [0.5, 0.5, 0.5, 0.5, 0.5];
 
-  // 1. פונקציה שקוראת מהענן כל הזמן ומעדכנת את המסך
-  function syncDisplay() {
-    fetch(DB_URL).then(r => r.json()).then(data => {
-      // אם הדאטה ריק או שגיאה, נציג סימני שאלה
+  function resizeCanvas() {
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = 250;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // --- לוגיקת הציור (הגרף המינימליסטי) ---
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const numPoints = 5;
+    // חישוב המרווחים כדי שהגרף יתפרס על כל הרוחב
+    const paddingX = 40; 
+    const stepX = (canvas.width - (paddingX * 2)) / (numPoints - 1);
+    
+    const paddingY = 20;
+    const drawHeight = canvas.height - (paddingY * 2);
+
+    // 1. תנועה חלקה (Smoothing)
+    for(let i=0; i<numPoints; i++) {
+        positions[i] += (targetPositions[i] - positions[i]) * 0.1;
+    }
+
+    // הגדרות הקו
+    ctx.strokeStyle = "#00C8FF";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "#00C8FF"; // הילה זוהרת
+
+    // 2. ציור הקו המחבר (The Path)
+    ctx.beginPath();
+    
+    // נקודה ראשונה
+    let startX = paddingX;
+    let startY = positions[0] * drawHeight + paddingY;
+    ctx.moveTo(startX, startY);
+
+    // חיבור שאר הנקודות
+    for (let i = 1; i < numPoints; i++) {
+      let x = paddingX + (stepX * i);
+      let y = positions[i] * drawHeight + paddingY;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // 3. ציור הנקודות (Dots)
+    ctx.fillStyle = "#fff"; // נקודות לבנות בוהקות
+    for (let i = 0; i < numPoints; i++) {
+      let x = paddingX + (stepX * i);
+      let y = positions[i] * drawHeight + paddingY;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2); // רדיוס הנקודה
+      ctx.fill();
+    }
+    
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  // --- סנכרון נתונים ---
+  function syncData() {
+    // שם המניה
+    fetch(`${DB_BASE}/current.json`).then(r => r.json()).then(data => {
       let val = (data && typeof data === 'string') ? data.replace(/"/g, '') : "---";
       document.getElementById('current-tick').innerText = val;
-    }).catch(e => console.error(e));
+    }).catch(e=>{});
+
+    // מיקומי מנועים
+    fetch(`${DB_BASE}/positions.json`).then(r => r.json()).then(data => {
+      if(Array.isArray(data) && data.length === 5) {
+        targetPositions = data; 
+      }
+    }).catch(e=>{});
   }
 
-  // הפעלה ראשונה + רענון כל 3 שניות
-  syncDisplay();
-  setInterval(syncDisplay, 3000);
+  setInterval(syncData, 1000); // כל שנייה
+  syncData();
 
-
-  // 2. פונקציה ששולחת עדכון לענן
   function send() {
     let input = document.getElementById('new-tick');
     let btn = document.getElementById('btn');
     let val = input.value.toUpperCase().trim();
-    
     if(!val) return;
 
-    // משוב ויזואלי ללחיצה
-    btn.innerText = "SENDING...";
-    btn.disabled = true;
+    btn.innerText = "SENDING..."; btn.disabled = true;
 
-    fetch(DB_URL, {
+    fetch(`${DB_BASE}/current.json`, {
       method: 'PUT',
       body: JSON.stringify(val)
     }).then(() => {
-      // מיד אחרי השליחה, ננקה ונחכה לסנכרון שיעדכן את המסך הגדול
       input.value = "";
-      setTimeout(() => {
-         btn.disabled = false;
-         btn.innerText = "UPDATE DISPLAY";
-         syncDisplay(); // רענון מהיר ידני
-      }, 1000);
-    }).catch(() => {
-      btn.innerText = "ERROR";
-      setTimeout(() => { btn.disabled = false; btn.innerText = "UPDATE DISPLAY"; }, 2000);
-    });
+      setTimeout(() => { btn.disabled = false; btn.innerText = "UPDATE GRAPH"; syncData(); }, 1000);
+    }).catch(() => { btn.innerText = "ERROR"; });
   }
 </script>
 </body>
