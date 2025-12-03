@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Kinetic Control</title>
+<style>
+  body { 
+    background-color: #000; 
+    color: #fff; 
+    font-family: 'Courier New', monospace; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    height: 100vh; 
+    margin: 0; 
+  }
+  
+  h1 { letter-spacing: 2px; font-size: 24px; margin-bottom: 40px; }
+  
+  input { 
+    background: #222; 
+    border: 2px solid #444; 
+    color: #0f0; 
+    font-size: 30px; 
+    padding: 15px; 
+    text-transform: uppercase; 
+    text-align: center; 
+    width: 80%; 
+    max-width: 300px;
+    border-radius: 10px;
+    font-family: inherit;
+    outline: none;
+  }
+  
+  input:focus { border-color: #0f0; }
+
+  button { 
+    background: #007bff; 
+    color: #fff; 
+    border: none; 
+    padding: 15px 50px; 
+    font-size: 20px; 
+    margin-top: 30px; 
+    cursor: pointer; 
+    border-radius: 50px; 
+    font-weight: bold;
+    transition: transform 0.2s;
+  }
+  
+  button:active { transform: scale(0.95); }
+  
+  #msg { 
+    margin-top: 25px; 
+    height: 20px; 
+    color: #888; 
+    font-size: 14px; 
+  }
+  
+  .success { color: #0f0 !important; }
+  .error { color: #f00 !important; }
+</style>
+</head>
+<body>
+
+  <h1>KINETIC ART CONTROL</h1>
+  
+  <input type="text" id="tick" placeholder="SYMBOL (e.g. TSLA)" autocomplete="off">
+  
+  <button onclick="send()">VISUALIZE</button>
+  
+  <div id="msg">Ready to connect...</div>
+
+<script>
+  // --- שים לב: וודא שזו הכתובת המדויקת מהמסוף שלך ---
+  const DB_URL = "https://kineticgraph-default-rtdb.firebaseio.com/current.json"; 
+
+  function send() {
+    let input = document.getElementById('tick');
+    let val = input.value.toUpperCase().trim();
+    let msg = document.getElementById('msg');
+    
+    if(!val) {
+        msg.innerText = "Please enter a symbol";
+        msg.className = "error";
+        return;
+    }
+    
+    msg.innerText = "Transmitting to Sculpture...";
+    msg.className = "";
+    
+    // שליחה לענן
+    fetch(DB_URL, {
+      method: 'PUT',
+      body: JSON.stringify(val)
+    }).then(response => {
+      if(response.ok) {
+        msg.innerText = "COMMAND SENT SUCCESSFULLY";
+        msg.className = "success";
+        input.value = ""; // איפוס השדה
+        setTimeout(() => { msg.innerText = "Ready for next command"; msg.className = ""; }, 3000);
+      } else {
+        throw new Error("Cloud Error");
+      }
+    }).catch(err => {
+      msg.innerText = "Connection Failed. Check Internet.";
+      msg.className = "error";
+      console.error(err);
+    });
+  }
+</script>
+</body>
+</html>
