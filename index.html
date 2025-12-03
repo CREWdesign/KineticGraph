@@ -3,176 +3,174 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Kinetic Remote</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+<title>Kinetic Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600;800&display=swap" rel="stylesheet">
 <style>
-  /* --- בסיס --- */
   body {
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%); /* רקע כהה עם עומק */
+    background-color: #050505;
     color: #fff;
     font-family: 'Montserrat', sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+    justify-content: space-between;
+    height: 100vh;
     margin: 0;
     padding: 20px;
     box-sizing: border-box;
+    text-align: center;
   }
 
-  /* --- כותרות --- */
-  h1 {
-    font-weight: 700;
-    letter-spacing: 4px;
-    font-size: 22px;
-    margin-bottom: 10px;
-    color: #fff;
-    text-transform: uppercase;
-  }
-  p.subtitle {
-    font-weight: 300;
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 50px;
-    letter-spacing: 1px;
-  }
-
-  /* --- אזור הקלט --- */
-  .input-group {
-    position: relative;
+  /* --- LIVE DISPLAY SECTION (TOP) --- */
+  .display-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     width: 100%;
-    max-width: 320px;
-    margin-bottom: 40px;
+  }
+
+  .live-indicator {
+    color: #ff3333;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
   
+  .dot {
+    width: 10px; height: 10px;
+    background-color: #ff3333;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ff3333;
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.3;} 100% {opacity: 1;} }
+
+  #current-tick {
+    font-size: 18vw; /* ענק ורספונסיבי */
+    font-weight: 800;
+    margin: 0;
+    line-height: 1;
+    background: -webkit-linear-gradient(#fff, #888);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+  }
+
+  .label { font-size: 14px; color: #555; letter-spacing: 3px; margin-top: 10px; text-transform: uppercase; }
+
+  /* --- CONTROL SECTION (BOTTOM) --- */
+  .control-area {
+    width: 100%;
+    max-width: 350px;
+    background: #151515;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #333;
+    margin-bottom: 20px;
+  }
+
   input {
     width: 100%;
     background: transparent;
     border: none;
-    border-bottom: 2px solid #333; /* רק קו תחתון */
-    color: #fff;
-    font-size: 32px;
-    font-weight: 700;
-    padding: 10px 0;
-    text-transform: uppercase;
-    text-align: center;
-    outline: none;
-    font-family: inherit;
-    transition: border-color 0.3s, color 0.3s;
-  }
-  
-  /* אפקט זוהר בלחיצה */
-  input:focus {
-    border-bottom-color: #00C8FF; 
-  }
-  
-  input::placeholder {
-    color: #444;
-    font-weight: 300;
+    border-bottom: 1px solid #444;
+    color: #00C8FF;
     font-size: 24px;
+    font-family: inherit;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    padding: 10px 0;
+    margin-bottom: 20px;
+    outline: none;
   }
+  input:focus { border-bottom-color: #00C8FF; }
 
-  /* --- הכפתור --- */
   button {
-    background: linear-gradient(45deg, #00C8FF, #007bff); /* גרדיאנט כחול זוהר */
-    color: #fff;
+    width: 100%;
+    background: #00C8FF;
+    color: #000;
     border: none;
-    padding: 18px 60px;
+    padding: 15px;
     font-size: 16px;
     font-weight: 700;
-    letter-spacing: 2px;
-    border-radius: 50px;
+    border-radius: 10px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 200, 255, 0.3); /* הילה כחולה */
-    transition: all 0.2s ease;
-    outline: none;
     text-transform: uppercase;
-  }
-  
-  button:active {
-    transform: scale(0.97); /* הקטנה קלה בלחיצה */
-    box-shadow: 0 2px 10px rgba(0, 200, 255, 0.2);
-  }
-  
-  /* מצב נעול אחרי לחיצה */
-  button.locked {
-    background: #333;
-    box-shadow: none;
-    color: #777;
-    cursor: not-allowed;
-  }
-
-  /* --- הודעות מערכת --- */
-  #msg {
-    margin-top: 30px;
-    height: 25px;
-    font-size: 14px;
-    font-weight: 400;
     letter-spacing: 1px;
-    opacity: 0; /* מוסתר כברירת מחדל */
-    transition: opacity 0.5s ease;
+    transition: opacity 0.3s;
   }
   
-  #msg.visible { opacity: 1; }
-  .success { color: #00FF88 !important; } /* ירוק ניאון */
-  .error { color: #FF4444 !important; } /* אדום ניאון */
+  button:active { opacity: 0.7; }
+  button:disabled { background: #333; color: #777; }
+
 </style>
 </head>
 <body>
 
-  <h1>Kinetic Graph</h1>
-  <p class="subtitle">Interactive Art Interface</p>
-  
-  <div class="input-group">
-    <input type="text" id="tick" placeholder="AAPL" autocomplete="off" maxlength="6">
+  <div class="display-area">
+    <div class="live-indicator"><div class="dot"></div>LIVE ON SCULPTURE</div>
+    <div id="current-tick">...</div>
+    <div class="label">Current Visualization</div>
   </div>
-  
-  <button id="btn" onclick="send()">Visualize</button>
-  
-  <div id="msg"></div>
+
+  <div class="control-area">
+    <div class="label" style="margin-bottom: 15px; margin-top:0;">Change Data Source</div>
+    <input type="text" id="new-tick" placeholder="TYPE SYMBOL" maxlength="6" autocomplete="off">
+    <button id="btn" onclick="send()">Update Display</button>
+  </div>
 
 <script>
+  // הכתובת של המסד נתונים שלך
   const DB_URL = "https://kineticgraph-default-rtdb.firebaseio.com/current.json"; 
 
-  function showMsg(text, type) {
-    let m = document.getElementById('msg');
-    m.innerText = text;
-    m.className = "visible " + type;
-    // הסתרת הודעת ההצלחה אוטומטית אחרי 4 שניות
-    if(type === 'success') setTimeout(() => { m.className = ""; }, 4000);
+  // 1. פונקציה שקוראת מהענן כל הזמן ומעדכנת את המסך
+  function syncDisplay() {
+    fetch(DB_URL).then(r => r.json()).then(data => {
+      // אם הדאטה ריק או שגיאה, נציג סימני שאלה
+      let val = (data && typeof data === 'string') ? data.replace(/"/g, '') : "---";
+      document.getElementById('current-tick').innerText = val;
+    }).catch(e => console.error(e));
   }
 
+  // הפעלה ראשונה + רענון כל 3 שניות
+  syncDisplay();
+  setInterval(syncDisplay, 3000);
+
+
+  // 2. פונקציה ששולחת עדכון לענן
   function send() {
-    let input = document.getElementById('tick');
+    let input = document.getElementById('new-tick');
     let btn = document.getElementById('btn');
     let val = input.value.toUpperCase().trim();
     
-    if(!val) {
-        showMsg("Please enter a stock symbol", "error");
-        return;
-    }
-    
-    // נעילת הממשק בזמן השליחה
-    showMsg("Transmitting...", "wait");
-    input.disabled = true;
-    btn.disabled = true; btn.classList.add('locked'); btn.innerText = "WAIT...";
+    if(!val) return;
+
+    // משוב ויזואלי ללחיצה
+    btn.innerText = "SENDING...";
+    btn.disabled = true;
 
     fetch(DB_URL, {
       method: 'PUT',
       body: JSON.stringify(val)
-    }).then(response => {
-      if(response.ok) {
-        showMsg("Visualization Active", "success");
-        input.value = ""; // ניקוי השדה
-      } else { throw new Error(); }
+    }).then(() => {
+      // מיד אחרי השליחה, ננקה ונחכה לסנכרון שיעדכן את המסך הגדול
+      input.value = "";
+      setTimeout(() => {
+         btn.disabled = false;
+         btn.innerText = "UPDATE DISPLAY";
+         syncDisplay(); // רענון מהיר ידני
+      }, 1000);
     }).catch(() => {
-      showMsg("Connection Failed", "error");
-    }).finally(() => {
-      // שחרור הנעילה (גם אם הצליח וגם אם נכשל)
-      input.disabled = false;
-      btn.disabled = false; btn.classList.remove('locked'); btn.innerText = "Visualize";
-      input.focus();
+      btn.innerText = "ERROR";
+      setTimeout(() => { btn.disabled = false; btn.innerText = "UPDATE DISPLAY"; }, 2000);
     });
   }
 </script>
