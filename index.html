@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Control the Art</title>
+<style>
+  body { background: #111; color: #fff; font-family: monospace; text-align: center; padding: 20px; }
+  input { background: transparent; border: 1px solid #555; color: #fff; font-size: 24px; padding: 10px; text-transform: uppercase; text-align: center; width: 80%; }
+  button { background: #007bff; color: #fff; border: none; padding: 15px 40px; font-size: 20px; margin-top: 20px; cursor: pointer; border-radius: 5px; }
+  .status { margin-top: 20px; color: #888; }
+</style>
+</head>
+<body>
+  <h1>KINETIC CONTROL</h1>
+  <p>Select a stock to visualize:</p>
+  
+  <input type="text" id="tick" placeholder="TSLA">
+  <br>
+  <button onclick="send()">VISUALIZE</button>
+  <div class="status" id="msg"></div>
+
+<script>
+  // --- הגדרות ---
+  // הדבק כאן את הכתובת של הפיירבייס שלך (חשוב להוסיף /current.json בסוף)
+  const DB_URL = "https://YOUR-PROJECT-NAME.firebaseio.com/current.json"; 
+
+  function send() {
+    let val = document.getElementById('tick').value.toUpperCase();
+    if(!val) return;
+    
+    document.getElementById('msg').innerText = "Sending...";
+    
+    // שליחה פשוטה לענן
+    fetch(DB_URL, {
+      method: 'PUT',
+      body: JSON.stringify(val)
+    }).then(() => {
+      document.getElementById('msg').innerText = "SENT! Watch the sculpture.";
+      document.getElementById('tick').value = "";
+    }).catch(err => {
+      document.getElementById('msg').innerText = "Error via Internet";
+    });
+  }
+</script>
+</body>
+</html>
